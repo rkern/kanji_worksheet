@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Kanji Writing Practice</title>
+    <style type="text/css">
+    body {
+        font-family : 'ヒラギノ角ゴ ProN' , 'Hiragino Kaku Gothic ProN' , '游ゴシック' , '游ゴシック体' , YuGothic , 'Yu Gothic' , 'メイリオ' , Meiryo , 'ＭＳ ゴシック' , 'MS Gothic' , HiraKakuProN-W3 , 'TakaoExゴシック' , TakaoExGothic , 'MotoyaLCedar' , 'Droid Sans Japanese' , sans-serif;
+    }
+    #content {
+        width: 8.5in;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    .kanji-line {
+        padding: 3pt;
+    }
+    .keyword {
+        font-size: 16pt;
+    }
+    .story {
+        font-size: 8pt;
+        font-style: italic;
+    }
+    .strokeDiagram {
+        float: right;
+    }
+    .strokeDiagram img {
+        height: 20pt;
+    }
+    .kanji-box {
+        font-size: 28pt;
+        width: 1.1em;
+        height: 1.1em;
+        line-height: 1.1em;
+        display: inline-block;
+        text-align: center;
+        border: 1px solid black;
+    }
+    .light {
+        color: hsl(0, 0%, 75%);
+    }
+    .lighter {
+        color: hsl(0, 0%, 90%);
+    }
+    .lightest {
+        color: hsl(0, 0%, 97%);
+    }
+
+    @media print {
+        .kanji-line {page-break-inside: avoid;}
+    }
+
+    </style>
+</head>
+<body>
+    <div id="content">
+    {% for note in notes %}
+        <div class="kanji-line">
+            <div class="strokeDiagram">{{ note['strokeDiagram']|safe }}</div>
+            <div class="keyword">{{ note['keyword'] }}</div>
+            <div class="story">{{ note['koohiiStory1'] }}</div>
+            <div class="kanji-boxes">
+                <div class="kanji-box light">{{ note['kanji'] }}</div>
+                <div class="kanji-box lighter">{{ note['kanji'] }}</div>
+                <div class="kanji-box lightest">{{ note['kanji'] }}</div>
+                {% for _ in range(13) %}
+                    <div class="kanji-box">&#12288;</div>
+                {% endfor %}
+            </div>
+        </div>
+        {% if not loop.last %}
+        <hr>
+        {% endif %}
+    {% endfor %}
+</div>
+</body>
+</html>
