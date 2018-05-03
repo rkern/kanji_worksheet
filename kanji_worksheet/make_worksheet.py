@@ -65,13 +65,14 @@ def get_notes_for_reviewed_cards(soup, last_time_ms=None, only_forgotten=False):
 
 def inline_data_images(note_fields, media_dir):
     for note in note_fields:
-        img = etree.fromstring(note['strokeDiagram'])
-        basename = img.get('src')
-        fn = os.path.join(media_dir, basename)
-        with open(fn) as f:
-            base64_data = f.read().encode('base64')
-        img.set('src', 'data:image/png;base64,{}'.format(base64_data))
-        note['strokeDiagram'] = etree.tostring(img)
+        if 'strokeDiagram' in note:
+            img = etree.fromstring(note['strokeDiagram'])
+            basename = img.get('src')
+            fn = os.path.join(media_dir, basename)
+            with open(fn) as f:
+                base64_data = f.read().encode('base64')
+            img.set('src', 'data:image/png;base64,{}'.format(base64_data))
+            note['strokeDiagram'] = etree.tostring(img)
 
 
 def main():
