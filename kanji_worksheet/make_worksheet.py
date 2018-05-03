@@ -22,22 +22,7 @@ import sqlsoup
 FIELD_SEP = u'\x1f'
 
 
-def get_notes_for_reviewed_cards(soup, last_time_ms=None):
-    if last_time_ms is not None:
-        # Query the review log for cards reviewed in the specified time window.
-        revs = soup.revlog.filter(soup.revlog.c.id >= last_time_ms).all()
-        card_ids = sorted(set(rev.cid for rev in revs))
-        if not card_ids:
-            raise RuntimeError("No cards found in time window!")
-        notes_query = soup.notes.filter(
-            soup.cards.c.id.in_(card_ids),
-            soup.notes.c.id == soup.cards.c.nid)
-    else:
-        notes_query = soup.notes
-
-    # Find the notes for the given cards.
-    notes = notes_query.all()
-
+def get_notes_for_reviewed_cards(soup, last_time_ms=None, only_forgotten=False):
     # Find out how to separate the note data into fields.
     collection = soup.col.one()
     models = json.loads(collection.models)
@@ -49,6 +34,25 @@ def get_notes_for_reviewed_cards(soup, last_time_ms=None):
         raise RuntimeError("Could not find the NihongoShark.com: Kanji metadata.")
     fields = sorted(model['flds'], key=itemgetter('ord'))
     field_names = [f['name'] for f in fields]
+
+    notes_query = soup.notes.filter(soup.notes.c.mid == model['id'])
+
+    if last_time_ms is not None:
+        # Query the review log for cards reviewed in the specified time window.
+        q = soup.revlog.filter(soup.revlog.c.id >= last_time_ms)
+        if only_forgotten:
+            # ease==1 means that we pressed the "again" button
+            q = q.filter(soup.revlog.c.ease == 1)
+        revs = q.all()
+        card_ids = sorted(set(rev.cid for rev in revs))
+        if not card_ids:
+            raise RuntimeError("No cards found in time window!")
+        notes_query = notes_query.filter(
+            soup.cards.c.id.in_(card_ids),
+            soup.notes.c.id == soup.cards.c.nid)
+
+    # Find the notes for the given cards.
+    notes = notes_query.all()
 
     # Turn the notes into field dicts.
     note_fields = [
@@ -78,6 +82,8 @@ def main():
                         help='The Anki user name.')
     parser.add_argument('-d', '--days', default=1, type=int,
                         help='The number of days to go back.')
+    parser.add_argument('-f', '--forgotten', action='store_true',
+                        help='Only use cards that we forgot.')
     parser.add_argument('-o', '--output', default='worksheet.html',
                         help='The HTML file to write to.')
 
@@ -96,7 +102,7 @@ def main():
 
     soup = sqlsoup.SQLSoup('sqlite:///{}'.format(anki_db_fn))
     try:
-        note_fields = get_notes_for_reviewed_cards(soup, last_time_ms)
+        note_fields = get_notes_for_reviewed_cards(soup, last_time_ms, args.forgotten)
     except RuntimeError as e:
         raise SystemExit(unicode(e))
     inline_data_images(note_fields, media_dir)
